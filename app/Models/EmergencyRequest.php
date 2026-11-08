@@ -109,6 +109,51 @@ class EmergencyRequest extends Model
         );
     }
 
+    public function acceptByDriver(DriverProfile $driver, DispatchLog $offer): bool
+    {
+        return DB::transaction(function () use ($driver, $offer): bool {
+            /** @var self $locked */
+            $locked = self::query()->lockForUpdate()->find($this->id);
+
+            if (! $locked->hasStatus(EmergencyStatus::SearchingDriver) || $offer->status !== DispatchStatus::Offered->value) {
+                return false;
+            }
+
+            $ambulance = $driver->ambulance;
+
+            $locked->update([
+                'status' => EmergencyStatus::DriverAssigned->value,
+                'accepted_at' => now(),
+                'driver_profile_id' => $driver->id,
+                'ambulance_id' => $ambulance?->id,
+                'hospital_id' => $driver->hospital_id,
+            ]);
+
+            $offer->update([
+                'status' => DispatchStatus::Accepted->value,
+                'responded_at' => now(),
+            ]);
+
+            $driver->update([
+                'availability_status' => \App\Enums\DriverAvailability::Busy->value,
+            ]);
+
+            return true;
+        });
+    }
+
+    public function declineByDriver(DriverProfile $driver, DispatchLog $offer): ?DispatchLog
+    {
+        return DB::transaction(function () use ($offer): ?DispatchLog {
+            $offer->update([
+                'status' => DispatchStatus::Declined->value,
+                'responded_at' => now(),
+            ]);
+
+            return $this->offerToNextDriver();
+        });
+    }
+
     public function widenRadius(): bool
     {
         $current = (int) ($this->search_radius_km ?? 3);

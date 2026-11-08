@@ -39,6 +39,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::put('availability', [AvailabilityController::class, 'update'])->name('availability');
             Route::post('location', [LocationController::class, 'store'])->name('location');
             Route::get('offers/current', [OfferController::class, 'current'])->name('offers.current');
+            Route::post('offers/{id}/accept', [OfferController::class, 'accept'])->name('offers.accept');
+            Route::post('offers/{id}/decline', [OfferController::class, 'decline'])->name('offers.decline');
         });
     });
 });
