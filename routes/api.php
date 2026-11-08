@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\Driver\AvailabilityController;
 use App\Http\Controllers\Api\V1\Driver\LocationController;
 use App\Http\Controllers\Api\V1\Driver\OfferController;
 use App\Http\Controllers\Api\V1\Driver\ProfileController;
+use App\Http\Controllers\Api\V1\Driver\TripController;
 use App\Http\Controllers\Api\V1\EmergencyRequestController;
 use Illuminate\Support\Facades\Route;
 
@@ -41,6 +42,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::get('offers/current', [OfferController::class, 'current'])->name('offers.current');
             Route::post('offers/{id}/accept', [OfferController::class, 'accept'])->name('offers.accept');
             Route::post('offers/{id}/decline', [OfferController::class, 'decline'])->name('offers.decline');
+
+            // Trip lifecycle endpoints
+            Route::get('trip/current', [TripController::class, 'current'])->name('trip.current');
+            Route::put('trip/status', [TripController::class, 'updateStatus'])->name('trip.status');
         });
     });
 });

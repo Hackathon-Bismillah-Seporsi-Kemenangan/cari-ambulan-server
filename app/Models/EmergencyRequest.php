@@ -154,6 +154,49 @@ class EmergencyRequest extends Model
         });
     }
 
+    /**
+     * Progress active trip to the next logical stage.
+     */
+    public function progressTripStatus(EmergencyStatus $targetStatus): bool
+    {
+        $currentStatus = EmergencyStatus::tryFrom($this->status);
+
+        $allowedNext = match ($currentStatus) {
+            EmergencyStatus::DriverAssigned => [EmergencyStatus::EnRouteToPickup],
+            EmergencyStatus::EnRouteToPickup => [EmergencyStatus::ArriveAtPickup],
+            EmergencyStatus::ArriveAtPickup => [EmergencyStatus::EnRouteToHospital],
+            EmergencyStatus::EnRouteToHospital => [EmergencyStatus::Completed],
+            default => [],
+        };
+
+        if (! in_array($targetStatus, $allowedNext, strict: true)) {
+            return false;
+        }
+
+        return DB::transaction(function () use ($targetStatus): bool {
+            $updates = [
+                'status' => $targetStatus->value,
+            ];
+
+            match ($targetStatus) {
+                EmergencyStatus::ArriveAtPickup => $updates['arrived_at_pickup_at'] = now(),
+                EmergencyStatus::EnRouteToHospital => $updates['picked_up_at'] = now(),
+                EmergencyStatus::Completed => $updates['completed_at'] = now(),
+                default => null,
+            };
+
+            $this->update($updates);
+
+            if ($targetStatus === EmergencyStatus::Completed && $this->driverProfile !== null) {
+                $this->driverProfile->update([
+                    'availability_status' => \App\Enums\DriverAvailability::Online->value,
+                ]);
+            }
+
+            return true;
+        });
+    }
+
     public function widenRadius(): bool
     {
         $current = (int) ($this->search_radius_km ?? 3);
