@@ -43,6 +43,16 @@ class User extends Authenticatable
         return $this->belongsToMany(Role::class, 'role_users');
     }
 
+    public function medicalProfile(): HasOne
+    {
+        return $this->hasOne(UserMedicalProfile::class);
+    }
+
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(UserAddress::class);
+    }
+
     public function driverProfile(): HasOne
     {
         return $this->hasOne(DriverProfile::class, 'user_id');

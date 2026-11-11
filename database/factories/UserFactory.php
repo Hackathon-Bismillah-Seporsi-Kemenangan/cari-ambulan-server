@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -25,21 +26,27 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
+            'full_name' => fake()->name(),
+            'phone' => fake()->phoneNumber(),
             'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
+            'alamat' => fake()->address(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];
     }
 
     /**
-     * Indicate that the model's email address should be unverified.
+     * Attach a role by name, creating it if needed.
      */
-    public function unverified(): static
+    public function withRole(string $roleName): static
     {
-        return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
-        ]);
+        return $this->afterCreating(function (User $user) use ($roleName) {
+            $user->roles()->attach(Role::firstOrCreate(['name' => $roleName]));
+        });
+    }
+
+    public function driver(): static
+    {
+        return $this->withRole('driver');
     }
 }

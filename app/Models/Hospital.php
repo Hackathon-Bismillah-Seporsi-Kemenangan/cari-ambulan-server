@@ -37,5 +37,21 @@ class Hospital extends Model
     {
         return $this->hasMany(Ambulance::class, 'hospital_id');
     }
-}
 
+    /**
+     * Closest hospital with known coordinates, with `distance_km` set on it.
+     */
+    public static function nearestTo(float $latitude, float $longitude): ?self
+    {
+        return self::query()
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->get()
+            ->each(fn (self $hospital) => $hospital->distance_km = round(
+                self::distanceKm($latitude, $longitude, $hospital->latitude, $hospital->longitude),
+                2,
+            ))
+            ->sortBy('distance_km')
+            ->first();
+    }
+}

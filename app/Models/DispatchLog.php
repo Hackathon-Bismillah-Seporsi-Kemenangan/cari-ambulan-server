@@ -64,5 +64,12 @@ class DispatchLog extends Model
     {
         return max(0, (int) now()->diffInSeconds($this->expiresAt(), false));
     }
-}
 
+    /**
+     * Rough drive time at an average 25 km/h in city traffic.
+     */
+    public static function drivingMinutes(float $distanceKm): int
+    {
+        return max(1, (int) ceil($distanceKm / 25 * 60));
+    }
+}

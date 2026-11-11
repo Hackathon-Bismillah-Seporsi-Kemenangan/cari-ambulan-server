@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AmbulanceController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\Driver\AvailabilityController;
 use App\Http\Controllers\Api\V1\Driver\LocationController;
@@ -7,6 +8,10 @@ use App\Http\Controllers\Api\V1\Driver\OfferController;
 use App\Http\Controllers\Api\V1\Driver\ProfileController;
 use App\Http\Controllers\Api\V1\Driver\TripController;
 use App\Http\Controllers\Api\V1\EmergencyRequestController;
+use App\Http\Controllers\Api\V1\HospitalController;
+use App\Http\Controllers\Api\V1\MeController;
+use App\Http\Controllers\Api\V1\MedicalProfileController;
+use App\Http\Controllers\Api\V1\UserAddressController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -25,7 +30,23 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('auth/me', [AuthController::class, 'me'])->name('auth.me');
+        Route::put('auth/me', [MeController::class, 'update']);
         Route::post('auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
+
+        // Profile, medical ID & saved addresses
+        Route::get('me', [MeController::class, 'show'])->name('me.show');
+        Route::put('me', [MeController::class, 'update'])->name('me.update');
+        Route::get('me/medical-profile', [MedicalProfileController::class, 'show'])->name('me.medical-profile.show');
+        Route::put('me/medical-profile', [MedicalProfileController::class, 'update'])->name('me.medical-profile.update');
+        Route::get('me/addresses', [UserAddressController::class, 'index'])->name('me.addresses.index');
+        Route::post('me/addresses', [UserAddressController::class, 'store'])->name('me.addresses.store');
+        Route::delete('me/addresses/{userAddress}', [UserAddressController::class, 'destroy'])->name('me.addresses.destroy');
+
+        // Nearest hospital & ambulance discovery
+        Route::get('hospitals/nearest', [HospitalController::class, 'nearest'])->name('hospitals.nearest');
+        Route::get('ambulances/nearest', [AmbulanceController::class, 'nearest'])
+            ->middleware('role:user')
+            ->name('ambulances.nearest');
 
         // Emergency Request endpoints (Patient / Any authenticated user)
         Route::prefix('emergency-requests')->name('emergency-requests.')->group(function () {
