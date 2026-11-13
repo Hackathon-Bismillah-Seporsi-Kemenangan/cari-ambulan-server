@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use Database\Seeders\RoleSeeder;
+use Database\Seeders\UserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -9,7 +11,12 @@ class AuthApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected bool $seed = true;
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed(RoleSeeder::class);
+        $this->seed(UserSeeder::class);
+    }
 
     public function test_driver_can_login_and_receive_token(): void
     {

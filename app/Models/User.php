@@ -63,6 +63,11 @@ class User extends Authenticatable
         return $this->hasMany(EmergencyRequest::class, 'user_id');
     }
 
+    public function hospital(): HasOne
+    {
+        return $this->hasOne(Hospital::class, 'admin_user_id');
+    }
+
     /**
      * Check whether this user has the given role name.
      */

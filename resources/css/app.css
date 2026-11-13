@@ -4,6 +4,30 @@
 @source '../../storage/framework/views/*.php';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+    /* Cari Ambulan design tokens.v1 */
+    --color-danger: #D92D2F;
+    --color-danger-50: #FDECEA;
+    --color-danger-100: #F9D9D6;
+    --color-primary: #1D66C0;
+    --color-primary-50: #E9F2FD;
+    --color-primary-100: #CFE1F8;
+    --color-success: #22C732;
+    --color-success-50: #EAF9EB;
+    --color-warning: #F88A25;
+    --color-warning-50: #FEF3E6;
+    --color-ink: #171B27;
+    --color-muted: #A8B2B0;
+    --color-line: #E5E8EB;
+    --color-surface: #F5F8F9;
+    --color-card: #FFFFFF;
+
+    --radius-card: 1rem;
+}
+
+@layer base {
+    body {
+        @apply bg-surface font-sans text-ink antialiased;
+    }
 }

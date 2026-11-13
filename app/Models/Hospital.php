@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'address', 'emergency_phone', 'latitude', 'longitude', 'ambulance_entrance', 'admin_user_id'])]
+#[Fillable(['name', 'address', 'emergency_phone', 'latitude', 'longitude', 'ambulance_entrance', 'health_facilities', 'admin_user_id'])]
 class Hospital extends Model
 {
     use CalculatesDistance, HasFactory, HasUuids;
@@ -20,6 +20,7 @@ class Hospital extends Model
         return [
             'latitude' => 'float',
             'longitude' => 'float',
+            'health_facilities' => 'array',
         ];
     }
 
@@ -36,6 +37,11 @@ class Hospital extends Model
     public function ambulances(): HasMany
     {
         return $this->hasMany(Ambulance::class, 'hospital_id');
+    }
+
+    public function emergencyRequests(): HasMany
+    {
+        return $this->hasMany(EmergencyRequest::class, 'hospital_id');
     }
 
     /**
