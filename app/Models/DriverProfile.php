@@ -85,16 +85,27 @@ class DriverProfile extends Model
     }
 
     /**
-     * Returns dispatchable drivers sorted by distance from given coordinates.
+     * Dispatchable drivers sorted by distance, with `distance_km` set.
      *
      * @param  list<string>  $excludedDriverIds
      * @return Collection<int, self>
      */
-    public static function nearestDispatchableTo(float $latitude, float $longitude, array $excludedDriverIds = []): Collection
+    public static function nearestDispatchableTo(float $latitude, float $longitude, array $excludedDriverIds = [], ?float $radiusKm = null): Collection
     {
-        return self::query()
+        $query = self::query()
             ->dispatchable()
-            ->whereNotIn('id', $excludedDriverIds)
+            ->whereNotIn('id', $excludedDriverIds);
+
+        // Narrow to a bounding box in SQL so only nearby drivers are loaded
+        // into PHP; the exact distance is still computed below.
+        if ($radiusKm !== null) {
+            $latDelta = $radiusKm / 111.0;
+            $lngDelta = $radiusKm / (111.0 * max(0.01, cos(deg2rad($latitude))));
+            $query->whereBetween('current_latitude', [$latitude - $latDelta, $latitude + $latDelta])
+                ->whereBetween('current_longitude', [$longitude - $lngDelta, $longitude + $lngDelta]);
+        }
+
+        return $query
             ->get()
             ->each(fn (self $driver) => $driver->distance_km = round(
                 self::distanceKm($latitude, $longitude, $driver->current_latitude, $driver->current_longitude),

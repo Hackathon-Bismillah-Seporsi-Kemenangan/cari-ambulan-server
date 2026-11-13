@@ -50,9 +50,13 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
         // Emergency Request endpoints (Patient / Any authenticated user)
         Route::prefix('emergency-requests')->name('emergency-requests.')->group(function () {
+            Route::get('', [EmergencyRequestController::class, 'index'])->name('index');
             Route::post('', [EmergencyRequestController::class, 'store'])->name('store');
             Route::get('current', [EmergencyRequestController::class, 'current'])->name('current');
-            Route::post('{id}/cancel', [EmergencyRequestController::class, 'cancel'])->name('cancel');
+            Route::get('{emergencyRequest}', [EmergencyRequestController::class, 'show'])->name('show');
+            Route::post('{emergencyRequest}/cancel', [EmergencyRequestController::class, 'cancel'])->name('cancel');
+            Route::post('{emergencyRequest}/radius', [EmergencyRequestController::class, 'widenRadius'])->name('radius');
+            Route::post('{emergencyRequest}/retry', [EmergencyRequestController::class, 'retrySearch'])->name('retry');
         });
 
         // Driver endpoints
@@ -65,8 +69,18 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('offers/{id}/decline', [OfferController::class, 'decline'])->name('offers.decline');
 
             // Trip lifecycle endpoints
+            Route::get('trip', [TripController::class, 'current'])->name('trip');
             Route::get('trip/current', [TripController::class, 'current'])->name('trip.current');
+            Route::get('trips', [TripController::class, 'index'])->name('trips.index');
             Route::put('trip/status', [TripController::class, 'updateStatus'])->name('trip.status');
+
+            Route::prefix('requests/{emergencyRequest}')->name('requests.')->group(function () {
+                Route::post('accept', [TripController::class, 'accept'])->name('accept');
+                Route::post('decline', [TripController::class, 'decline'])->name('decline');
+                Route::post('arrive', [TripController::class, 'arrive'])->name('arrive');
+                Route::post('start-to-hospital', [TripController::class, 'startToHospital'])->name('start-to-hospital');
+                Route::post('complete', [TripController::class, 'complete'])->name('complete');
+            });
         });
     });
 });

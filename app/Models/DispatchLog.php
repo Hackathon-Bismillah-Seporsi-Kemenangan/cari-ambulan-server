@@ -55,6 +55,11 @@ class DispatchLog extends Model
             ->where('offered_at', '>', self::expiryCutoff());
     }
 
+    public function isPending(): bool
+    {
+        return $this->status === DispatchStatus::Offered->value && $this->secondsRemaining() > 0;
+    }
+
     public function expiresAt(): Carbon
     {
         return $this->offered_at->copy()->addSeconds(self::OFFER_SECONDS);

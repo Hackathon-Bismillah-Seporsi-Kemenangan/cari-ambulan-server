@@ -8,19 +8,26 @@ use Illuminate\Http\Response;
 class LocationController extends DriverController
 {
     /**
-     * Update driver's latest GPS beacon coordinates.
+     * Latest GPS fix; also recorded on the active trip's route log.
      */
     public function store(StoreLocationRequest $request): Response
     {
         $driver = $this->driver($request);
+        $latitude = $request->float('latitude');
+        $longitude = $request->float('longitude');
 
         $driver->update([
-            'current_latitude' => $request->float('latitude'),
-            'current_longitude' => $request->float('longitude'),
+            'current_latitude' => $latitude,
+            'current_longitude' => $longitude,
             'location_updated_at' => now(),
+        ]);
+
+        $driver->activeTrip()?->tripLocationLogs()->create([
+            'latitude' => $latitude,
+            'longitude' => $longitude,
+            'recorded_at' => now(),
         ]);
 
         return response()->noContent();
     }
 }
-
