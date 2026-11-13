@@ -1,0 +1,114 @@
+name: Deploy CariAmbulan
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+concurrency:
+  group: cariambulan-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: [self-hosted, Linux, X64]
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Build frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Sync source to VPS
+        run: |
+          rsync -r \
+            --exclude='.git/' \
+            --exclude='.env' \
+            --exclude='.env.*' \
+            --exclude='storage/' \
+            --exclude='vendor/' \
+            --exclude='node_modules/' \
+            --exclude='public/storage/' \
+            --exclude='bootstrap/cache/' \
+            ./ /root/testing-bang-/
+
+      - name: Install PHP dependencies
+        run: |
+          docker compose \
+            -f /root/testing-bang-/compose.yaml \
+            run --rm --no-deps --entrypoint composer app \
+            install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+
+      - name: Ensure HTTPS settings
+        # Absolute URLs (form actions, redirects) must point at the https
+        # name, and the session cookie must be marked secure.
+        run: |
+          cd /root/testing-bang-
+          HOST=$(grep '^PUBLIC_HOST=.\+' .env | cut -d= -f2- || true)
+          HOST=${HOST:-103-150-60-58.sslip.io}
+          if [ -s .env ] && [ -n "$(tail -c1 .env)" ]; then echo >> .env; fi
+          sed -i '/^APP_URL=/d;/^SESSION_SECURE_COOKIE=/d' .env
+          echo "APP_URL=https://$HOST" >> .env
+          echo "SESSION_SECURE_COOKIE=true" >> .env
+
+      - name: Ensure LiveKit Cloud is configured
+        # Uses LiveKit Cloud platform. Clean up legacy self-hosted overrides.
+        run: |
+          cd /root/testing-bang-
+          sed -i '/^LIVEKIT_API_URL=/d;/^TURN_SECRET=/d' .env
+          if ! grep -q '^LIVEKIT_URL=.\+' .env; then
+            echo "LIVEKIT_URL=https://your-project.livekit.cloud" >> .env
+          fi
+
+      - name: Build Docker images
+        run: |
+          cd /root/testing-bang-
+          docker compose build app scheduler reverb
+
+      - name: Restart application
+        run: |
+          cd /root/testing-bang-
+          docker compose up -d --force-recreate --remove-orphans app web caddy scheduler reverb
+
+      - name: Clear Laravel cache
+        run: |
+          cd /root/testing-bang-
+          # Caches are rebuilt by the container on start; just confirm it booted.
+          docker compose exec -T app php artisan --version
+
+      - name: Health check
+        run: |
+          cd /root/testing-bang-
+
+          for i in $(seq 1 30); do
+            if curl -fsS --max-time 5 \
+              http://127.0.0.1:8080/up \
+              -o /dev/null; then
+              echo "Application is healthy"
+              docker compose ps
+              exit 0
+            fi
+
+            echo "Waiting for application... ($i/30)"
+            sleep 5
+          done
+
+          echo "Deployment health check failed"
+          docker compose logs --tail=100 app
+          exit 1

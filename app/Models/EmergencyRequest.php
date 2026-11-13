@@ -6,6 +6,7 @@ use App\Enums\CallStatus;
 use App\Enums\DispatchStatus;
 use App\Enums\DriverAvailability;
 use App\Enums\EmergencyStatus;
+use App\Events\EmergencyRequestStatusUpdated;
 use App\Models\Concerns\CalculatesDistance;
 use App\Services\Notification\FcmService;
 use Database\Factories\EmergencyRequestFactory;
@@ -52,6 +53,21 @@ class EmergencyRequest extends Model
     use HasFactory;
 
     use HasUuids;
+
+    protected static function booted(): void
+    {
+        static::updated(function (self $emergencyRequest) {
+            if ($emergencyRequest->wasChanged('status')) {
+                // Dashboards also poll, so a WebSocket outage must not fail the
+                // dispatch step that changed the status.
+                rescue(fn () => event(new EmergencyRequestStatusUpdated($emergencyRequest)));
+            }
+        });
+
+        static::created(function (self $emergencyRequest) {
+            rescue(fn () => event(new EmergencyRequestStatusUpdated($emergencyRequest)));
+        });
+    }
 
     /**
      * Search radius step progression in kilometers.

@@ -1,0 +1,11 @@
+# TLS front: Caddy gets and renews a Let's Encrypt certificate for
+# PUBLIC_HOST by itself (HTTP-01 on port 80), redirects http -> https,
+# and proxies to nginx (site/API) and Reverb (WebSocket over wss, 8443).
+{$PUBLIC_HOST} {
+	encode zstd gzip
+	reverse_proxy web:80
+}
+
+{$PUBLIC_HOST}:8443 {
+	reverse_proxy reverb:8081
+}
