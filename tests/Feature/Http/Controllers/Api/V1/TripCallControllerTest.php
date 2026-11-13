@@ -38,6 +38,7 @@ class TripCallControllerTest extends TestCase
 
     public function test_rings_the_driver_of_the_reporter_active_order(): void
     {
+        $this->freezeTime();
         $driver = DriverProfile::factory()->withAmbulance()->create();
         $trip = $this->assignedTrip($driver, EmergencyStatus::EnRouteToPickup);
         $reporter = $trip->user;
@@ -150,4 +151,3 @@ class TripCallControllerTest extends TestCase
         $response->assertNotFound();
     }
 }
-

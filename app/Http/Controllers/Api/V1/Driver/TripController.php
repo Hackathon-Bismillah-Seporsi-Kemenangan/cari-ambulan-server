@@ -7,7 +7,6 @@ use App\Enums\DispatchStatus;
 use App\Enums\DriverAvailability;
 use App\Enums\EmergencyStatus;
 use App\Http\Resources\EmergencyRequestResource;
-use App\Models\DriverProfile;
 use App\Models\EmergencyRequest;
 use App\Models\Hospital;
 use Illuminate\Http\JsonResponse;
@@ -271,10 +270,5 @@ class TripController extends DriverController
         );
 
         $emergency->update(['status' => $to->value, ...$attributes]);
-    }
-
-    private function ensureAssigned(EmergencyRequest $emergency, DriverProfile $driver): void
-    {
-        abort_unless($emergency->driver_profile_id === $driver->id, 404);
     }
 }
