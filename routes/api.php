@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Api\V1\AmbulanceController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\CallController;
 use App\Http\Controllers\Api\V1\CallSignalingController;
+use App\Http\Controllers\Api\V1\DeviceTokenController;
 use App\Http\Controllers\Api\V1\Driver\AvailabilityController;
 use App\Http\Controllers\Api\V1\Driver\CallController as DriverCallController;
 use App\Http\Controllers\Api\V1\Driver\LocationController;
@@ -11,6 +13,7 @@ use App\Http\Controllers\Api\V1\Driver\ProfileController;
 use App\Http\Controllers\Api\V1\Driver\TripController;
 use App\Http\Controllers\Api\V1\EmergencyRequestController;
 use App\Http\Controllers\Api\V1\HospitalController;
+use App\Http\Controllers\Api\V1\LiveKitWebhookController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\MedicalProfileController;
 use App\Http\Controllers\Api\V1\TripCallController;
@@ -30,6 +33,11 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::post('auth/login', [AuthController::class, 'login'])
         ->middleware('throttle:6,1')
         ->name('auth.login');
+
+    Route::post('webhooks/livekit', [LiveKitWebhookController::class, 'handle'])
+        ->name('webhooks.livekit');
+    Route::post('livekit/webhook', [LiveKitWebhookController::class, 'handle'])
+        ->name('livekit.webhook');
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('auth/me', [AuthController::class, 'me'])->name('auth.me');
@@ -63,8 +71,25 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('{emergencyRequest}/calls', [TripCallController::class, 'store'])->name('calls.store');
         });
 
+        // Device token management (FCM)
+        Route::get('device-tokens', [DeviceTokenController::class, 'index'])->name('device-tokens.index');
+        Route::post('device-tokens', [DeviceTokenController::class, 'store'])->name('device-tokens.store');
+        Route::delete('device-tokens', [DeviceTokenController::class, 'destroy'])->name('device-tokens.destroy');
+
         // WebRTC Signaling & Call Management for both Driver & User
         Route::get('calls/incoming', [CallSignalingController::class, 'incoming'])->name('calls.incoming');
+
+        // App-to-App LiveKit Calls
+        Route::prefix('calls')->name('calls.')->group(function () {
+            Route::get('/', [CallController::class, 'index'])->name('index');
+            Route::post('/', [CallController::class, 'store'])->name('store');
+            Route::get('{call}', [CallController::class, 'show'])->name('show');
+            Route::post('{call}/accept', [CallController::class, 'accept'])->name('accept');
+            Route::post('{call}/reject', [CallController::class, 'reject'])->name('reject');
+            Route::post('{call}/cancel', [CallController::class, 'cancel'])->name('cancel');
+            Route::post('{call}/end', [CallController::class, 'end'])->name('end');
+            Route::match(['get', 'post'], '{call}/token', [CallController::class, 'token'])->name('token');
+        });
 
         // WebRTC Signaling & Actions for Trip Calls
         Route::prefix('calls/{tripCall}')->name('calls.')->group(function () {

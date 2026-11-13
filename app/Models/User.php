@@ -68,6 +68,21 @@ class User extends Authenticatable
         return $this->hasOne(Hospital::class, 'admin_user_id');
     }
 
+    public function deviceTokens(): HasMany
+    {
+        return $this->hasMany(DeviceToken::class);
+    }
+
+    public function initiatedCalls(): HasMany
+    {
+        return $this->hasMany(Call::class, 'caller_id');
+    }
+
+    public function receivedCalls(): HasMany
+    {
+        return $this->hasMany(Call::class, 'receiver_id');
+    }
+
     /**
      * Check whether this user has the given role name.
      */

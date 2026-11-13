@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\V1\TripCallResource;
 use App\Models\EmergencyRequest;
 use App\Models\TripCall;
+use App\Services\Notification\FcmService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -74,9 +75,12 @@ class TripCallController extends Controller
 
         CallStatusUpdated::broadcastSafely($call, CallStatus::Ringing);
 
+        // Ring the other phone even when its app is closed. Runs after the
+        // response, so the caller never waits on Google.
+        defer(fn () => app(FcmService::class)->sendTripCall($call));
+
         return (new TripCallResource($call->load('caller', 'emergencyRequest')))
             ->response()
             ->setStatusCode(201);
     }
 }
-

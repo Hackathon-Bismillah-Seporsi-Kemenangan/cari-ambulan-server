@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Enums\CallStatus;
 use App\Enums\DispatchStatus;
 use App\Enums\DriverAvailability;
 use App\Enums\EmergencyStatus;
 use App\Models\Concerns\CalculatesDistance;
+use App\Services\Notification\FcmService;
 use Database\Factories\EmergencyRequestFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -322,7 +324,9 @@ class EmergencyRequest extends Model
      */
     public function offerToNextDriver(): ?DispatchLog
     {
-        return DB::transaction(function (): ?DispatchLog {
+        $offeredUserIds = [];
+
+        $first = DB::transaction(function () use (&$offeredUserIds): ?DispatchLog {
             /** @var self $request */
             $request = self::query()->lockForUpdate()->findOrFail($this->id);
 
@@ -369,6 +373,9 @@ class EmergencyRequest extends Model
 
                 $first ??= $log;
                 $slots--;
+                if ($candidate->user_id) {
+                    $offeredUserIds[] = (string) $candidate->user_id;
+                }
             }
 
             if ($first === null) {
@@ -385,6 +392,18 @@ class EmergencyRequest extends Model
 
             return $first;
         });
+
+        // Wake the offered drivers' phones, even with the app closed. Runs
+        // after the response / command, off the dispatch path.
+        if ($offeredUserIds !== []) {
+            $requestId = $this->id;
+            defer(fn () => app(FcmService::class)->sendEmergencyOffer(
+                self::query()->findOrFail($requestId),
+                $offeredUserIds,
+            ));
+        }
+
+        return $first;
     }
 
     /**
@@ -420,7 +439,7 @@ class EmergencyRequest extends Model
                 ]);
 
                 $emergency->calls()->live()->update([
-                    'status' => \App\Enums\CallStatus::Ended->value,
+                    'status' => CallStatus::Ended->value,
                     'ended_at' => now(),
                 ]);
 
