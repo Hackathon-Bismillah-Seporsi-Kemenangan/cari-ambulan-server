@@ -1,10 +1,12 @@
 <?php
 
+use App\Enums\CallStatus;
 use App\Enums\DriverAvailability;
 use App\Enums\EmergencyStatus;
 use App\Models\Ambulance;
 use App\Models\EmergencyRequest;
 use App\Models\Hospital;
+use App\Models\TripCall;
 use App\Models\User;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -27,6 +29,11 @@ Schedule::call(fn () => EmergencyRequest::redispatchWaiting())
 Schedule::call(fn () => EmergencyRequest::closeAbandoned())
     ->hourly()
     ->name('close-abandoned-emergency-requests')
+    ->withoutOverlapping();
+
+Schedule::call(fn () => TripCall::markMissed())
+    ->everyMinute()
+    ->name('mark-missed-trip-calls')
     ->withoutOverlapping();
 
 Artisan::command('demo:emergency {--driver=driver@cariambulan.id : Email of the driver to place the call near}', function () {
@@ -68,6 +75,34 @@ Artisan::command('demo:emergency {--driver=driver@cariambulan.id : Email of the 
 
     return 0;
 })->purpose('Create a test emergency call near a driver');
+
+Artisan::command('demo:call {--driver=driver@cariambulan.id : Email of the driver to call}', function () {
+    $trip = User::where('email', $this->option('driver'))->first()?->driverProfile?->activeTrip();
+
+    if ($trip === null) {
+        $this->error('Driver has no active order. Accept one in the app first (php artisan demo:emergency).');
+
+        return 1;
+    }
+
+    TripCall::markMissed();
+
+    if ($trip->calls()->live()->exists()) {
+        $this->error('A call is already ringing or in progress on this order.');
+
+        return 1;
+    }
+
+    $trip->calls()->create([
+        'caller_id' => $trip->user_id,
+        'status' => CallStatus::Ringing->value,
+        'rang_at' => now(),
+    ]);
+
+    $this->info("{$trip->user->full_name} is calling the driver about {$trip->request_code}.");
+
+    return 0;
+})->purpose('Ring the driver from the reporter of their active order');
 
 Artisan::command('driver:assign-ambulance {email : Email of the driver} {plate : Plate number, e.g. "P 1234 AB"} {--type=Ambulans BLS : Vehicle type} {--hospital= : Hospital id or name, when the driver has none}', function () {
     $driver = User::where('email', $this->argument('email'))->first()?->driverProfile;

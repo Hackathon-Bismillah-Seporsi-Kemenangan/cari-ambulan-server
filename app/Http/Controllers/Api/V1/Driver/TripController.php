@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Driver;
 
+use App\Enums\CallStatus;
 use App\Enums\DispatchStatus;
 use App\Enums\DriverAvailability;
 use App\Enums\EmergencyStatus;
@@ -198,6 +199,12 @@ class TripController extends DriverController
             to: EmergencyStatus::Completed,
             attributes: ['completed_at' => now()],
         );
+
+        // The order is closed, so is any call about it.
+        $emergencyRequest->calls()->live()->update([
+            'status' => CallStatus::Ended->value,
+            'ended_at' => now(),
+        ]);
 
         $this->driver($request)->update(['availability_status' => DriverAvailability::Online->value]);
         EmergencyRequest::redispatchWaiting();

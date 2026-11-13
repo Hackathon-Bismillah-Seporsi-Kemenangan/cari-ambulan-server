@@ -35,4 +35,22 @@ return [
         ],
     ],
 
+    'turn' => [
+        'secret' => env('TURN_SECRET'),
+        'host' => env('TURN_HOST'),
+        'port' => (int) env('TURN_PORT', 3478),
+        'ttl' => (int) env('TURN_TTL', 3600),
+    ],
+
+    'livekit' => [
+        'url' => env('LIVEKIT_URL', 'https://your-project.livekit.cloud'),
+        'api_key' => env('LIVEKIT_API_KEY'),
+        'api_secret' => env('LIVEKIT_API_SECRET'),
+        'token_ttl' => (int) env('LIVEKIT_TOKEN_TTL', 3600),
+    ],
+
+    'trip_call' => [
+        'max_seconds' => (int) env('TRIP_CALL_MAX_SECONDS', 7200),
+    ],
+
 ];

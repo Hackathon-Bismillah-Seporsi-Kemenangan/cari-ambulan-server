@@ -136,6 +136,11 @@ class EmergencyRequest extends Model
         return $this->hasMany(DispatchLog::class, 'emergency_request_id');
     }
 
+    public function calls(): HasMany
+    {
+        return $this->hasMany(TripCall::class, 'emergency_request_id');
+    }
+
     /**
      * Still searching for a driver or being served.
      *
@@ -412,6 +417,11 @@ class EmergencyRequest extends Model
                 $emergency->dispatchLogs()->pending()->update([
                     'status' => DispatchStatus::Timeout->value,
                     'responded_at' => now(),
+                ]);
+
+                $emergency->calls()->live()->update([
+                    'status' => \App\Enums\CallStatus::Ended->value,
+                    'ended_at' => now(),
                 ]);
 
                 $driver = $emergency->driverProfile()->lockForUpdate()->first();

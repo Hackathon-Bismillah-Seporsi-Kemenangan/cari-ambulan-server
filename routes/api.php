@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Api\V1\AmbulanceController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\CallSignalingController;
 use App\Http\Controllers\Api\V1\Driver\AvailabilityController;
+use App\Http\Controllers\Api\V1\Driver\CallController as DriverCallController;
 use App\Http\Controllers\Api\V1\Driver\LocationController;
 use App\Http\Controllers\Api\V1\Driver\OfferController;
 use App\Http\Controllers\Api\V1\Driver\ProfileController;
@@ -11,6 +13,7 @@ use App\Http\Controllers\Api\V1\EmergencyRequestController;
 use App\Http\Controllers\Api\V1\HospitalController;
 use App\Http\Controllers\Api\V1\MeController;
 use App\Http\Controllers\Api\V1\MedicalProfileController;
+use App\Http\Controllers\Api\V1\TripCallController;
 use App\Http\Controllers\Api\V1\UserAddressController;
 use Illuminate\Support\Facades\Route;
 
@@ -57,6 +60,20 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::post('{emergencyRequest}/cancel', [EmergencyRequestController::class, 'cancel'])->name('cancel');
             Route::post('{emergencyRequest}/radius', [EmergencyRequestController::class, 'widenRadius'])->name('radius');
             Route::post('{emergencyRequest}/retry', [EmergencyRequestController::class, 'retrySearch'])->name('retry');
+            Route::post('{emergencyRequest}/calls', [TripCallController::class, 'store'])->name('calls.store');
+        });
+
+        // WebRTC Signaling & Call Management for both Driver & User
+        Route::get('calls/incoming', [CallSignalingController::class, 'incoming'])->name('calls.incoming');
+
+        // WebRTC Signaling & Actions for Trip Calls
+        Route::prefix('calls/{tripCall}')->name('calls.')->group(function () {
+            Route::get('/', [CallSignalingController::class, 'show'])->name('show');
+            Route::post('answer', [CallSignalingController::class, 'answer'])->name('answer');
+            Route::post('decline', [CallSignalingController::class, 'decline'])->name('decline');
+            Route::post('end', [CallSignalingController::class, 'end'])->name('end');
+            Route::post('signal', [CallSignalingController::class, 'signal'])->name('signal');
+            Route::get('ice-servers', [CallSignalingController::class, 'iceServers'])->name('ice-servers');
         });
 
         // Driver endpoints
@@ -73,6 +90,13 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::get('trip/current', [TripController::class, 'current'])->name('trip.current');
             Route::get('trips', [TripController::class, 'index'])->name('trips.index');
             Route::put('trip/status', [TripController::class, 'updateStatus'])->name('trip.status');
+            Route::get('calls/current', [DriverCallController::class, 'current'])->name('calls.current');
+
+            Route::prefix('calls/{tripCall}')->name('calls.')->group(function () {
+                Route::post('answer', [DriverCallController::class, 'answer'])->name('answer');
+                Route::post('decline', [DriverCallController::class, 'decline'])->name('decline');
+                Route::post('end', [DriverCallController::class, 'end'])->name('end');
+            });
 
             Route::prefix('requests/{emergencyRequest}')->name('requests.')->group(function () {
                 Route::post('accept', [TripController::class, 'accept'])->name('accept');

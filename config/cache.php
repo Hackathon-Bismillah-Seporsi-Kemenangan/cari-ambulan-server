@@ -84,6 +84,11 @@ return [
             'lock_connection' => env('REDIS_CACHE_LOCK_CONNECTION', 'default'),
         ],
 
+        'trip-call' => [
+            'driver' => env('TRIP_CALL_STORE', env('CACHE_STORE', 'database')),
+            'connection' => env('TRIP_CALL_REDIS_CONNECTION', 'default'),
+        ],
+
         'dynamodb' => [
             'driver' => 'dynamodb',
             'key' => env('AWS_ACCESS_KEY_ID'),
