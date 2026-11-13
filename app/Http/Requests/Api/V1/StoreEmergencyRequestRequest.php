@@ -19,7 +19,7 @@ class StoreEmergencyRequestRequest extends FormRequest
         return [
             'is_for_self' => ['nullable', 'boolean'],
             'emergency_type' => ['nullable', 'string', 'max:50'],
-            'severity_level' => ['nullable', 'string', 'in:critical,severe,moderate,mild'],
+            'severity_level' => ['nullable', 'string', 'in:critical,severe,moderate,mild,high,medium,low'],
             'patient_notes' => ['nullable', 'string', 'max:500'],
             'pickup_latitude' => ['required', 'numeric', 'between:-90,90'],
             'pickup_longitude' => ['required', 'numeric', 'between:-180,180'],
@@ -27,4 +27,3 @@ class StoreEmergencyRequestRequest extends FormRequest
         ];
     }
 }
-

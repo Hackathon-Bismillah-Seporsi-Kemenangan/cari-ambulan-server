@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Http\Resources\V1\EmergencyRequestResource;
 use App\Models\DispatchLog;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -38,6 +39,7 @@ class DispatchOfferResource extends JsonResource
                 'name' => $patient?->full_name ?? $patient?->name ?? 'Pasien',
                 'phone' => $patient?->phone,
             ],
+            'request' => $emergency ? new EmergencyRequestResource($emergency) : null,
             'offered_at' => $this->offered_at?->toIso8601String(),
         ];
     }
