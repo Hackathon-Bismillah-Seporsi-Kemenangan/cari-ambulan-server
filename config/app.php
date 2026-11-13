@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'Cari Ambulan'),
 
     /*
     |--------------------------------------------------------------------------
@@ -66,6 +66,25 @@ return [
     */
 
     'timezone' => 'UTC',
+
+    /*
+    | Timezone used for day boundaries shown to users (e.g. "trips today"),
+    | while timestamps stay stored in UTC.
+    */
+    'local_timezone' => env('APP_LOCAL_TIMEZONE', 'Asia/Jakarta'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Seeded Administrator Password
+    |--------------------------------------------------------------------------
+    |
+    | Password for admin@cariambulan.id created by AdminUserSeeder. Required
+    | outside the local environment so no server runs with the public demo
+    | password.
+    |
+    */
+
+    'admin_password' => env('ADMIN_PASSWORD'),
 
     /*
     |--------------------------------------------------------------------------
